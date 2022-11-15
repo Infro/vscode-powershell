@@ -11,6 +11,7 @@ import { PowerShellAdditionalExePathSettings } from "./settings";
 // This uses require so we can rewire it in unit tests!
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-var-requires
 const utils = require("./utils");
+const exec = require('child_process').exec;
 
 const WindowsPowerShell64BitLabel = "Windows PowerShell (x64)";
 const WindowsPowerShell32BitLabel = "Windows PowerShell (x86)";
@@ -326,6 +327,18 @@ export class PowerShellExeFinder {
 
         let highestSeenVersion = -1;
         let pwshExePath: string | undefined;
+        // Union the paths from readDirectory and PATH.split and find the highest version.
+        for (const item of process.env.PATH.split(";"))
+        {
+            const exePath = path.join(item, "pwsh.exe");
+            if (!await utils.checkIfFileExists(exePath)) {
+                continue;
+            }
+            exec(`wmic datafile where name='${queryPath}' get version`, (error, stdout, stderr) => {
+                let versionSplit = stdout.split('\n');
+                let versionString = versionSplit[1].trim();
+            });
+        }
         for (const item of await utils.readDirectory(powerShellInstallBaseDir)) {
             let currentVersion = -1;
             if (findPreview) {
